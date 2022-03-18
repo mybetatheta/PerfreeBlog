@@ -12,8 +12,6 @@
     <artifactId>perfree-plugins</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>perfree-plugins-exam</module>
-        <module>perfree-access-logs</module>
     </modules>
 
 </project>

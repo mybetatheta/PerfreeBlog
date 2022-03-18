@@ -46,79 +46,10 @@
         </dependency>
 
         <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-gfm-tables</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-task-list-items</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.atlassian.commonmark</groupId>
-            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-yaml-front-matter</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-heading-anchor</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-ins</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-autolink</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark-ext-image-attributes</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
         </dependency>
 
-
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>swagger-bootstrap-ui</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-models</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.auth0</groupId>
@@ -182,16 +113,12 @@
             <artifactId>sitemapgen4j</artifactId>
         </dependency>
 
+
         <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
         </dependency>
 
-        <!-- 分页插件 -->
-        <dependency>
-            <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper-spring-boot-starter</artifactId>
-        </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -200,6 +127,10 @@
         <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-generator</artifactId>
         </dependency>
 
         <dependency>
