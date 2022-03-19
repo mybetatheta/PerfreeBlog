@@ -25,23 +25,18 @@ public class GeneratorCode {
 
         // 设置生成的代码信息
         Map<OutputFile, String> pathInfo = new HashMap<>();
-        pathInfo.put(OutputFile.xml, "D://genCode/mapperXml");
-        pathInfo.put(OutputFile.mapper, "D://genCode/mapper");
-        pathInfo.put(OutputFile.entity, "D://genCode/model");
-        pathInfo.put(OutputFile.service, "D://genCode/service");
-        pathInfo.put(OutputFile.serviceImpl, "D://genCode/service/impl");
+        pathInfo.put(OutputFile.xml, System.getProperty("user.dir") + "/perfree-web/src/main/resources/mapper");
+        pathInfo.put(OutputFile.mapper, System.getProperty("user.dir") + "/perfree-web/src/main/java/com/perfree/mapper");
+        pathInfo.put(OutputFile.entity, System.getProperty("user.dir") + "/perfree-core/src/main/java/com/perfree/model");
+        pathInfo.put(OutputFile.service,  System.getProperty("user.dir") + "/perfree-core/src/main/java/com/perfree/service");
+        pathInfo.put(OutputFile.serviceImpl, System.getProperty("user.dir") + "/perfree-web/src/main/java/com/perfree/service/impl");
         fastAutoGenerator.packageConfig(builder -> {
                 builder.parent("com.perfree").xml("mapper").entity("model").mapper("mapper").service("service").serviceImpl("service.impl").pathInfo(pathInfo).build();
         });
 
         // 设置要生成哪些表,增加addInclude即可,如果全部生成,则删除addInclude
         fastAutoGenerator.strategyConfig(builder -> {
-                builder.addInclude("p_article").addInclude("p_article_tag").addInclude("p_attach").addInclude("p_category")
-                        .addInclude("p_comment").addInclude("p_link")
-                        .addInclude("p_menu").addInclude("p_option")
-                        .addInclude("p_plugin").addInclude("p_role")
-                        .addInclude("p_tag").addInclude("p_user")
-                        .addTablePrefix("p_");
+                builder.addTablePrefix("p_");
         });
 
         fastAutoGenerator.templateConfig(builder -> {
