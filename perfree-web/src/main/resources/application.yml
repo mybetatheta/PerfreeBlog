@@ -58,16 +58,12 @@ spring:
   mvc:
     view:
       prefix: /
-mybatis:
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    map-underscore-to-camel-case: true
   mapper-locations: classpath*:mapper/*.xml
-  type-aliases-package: com.perfree.model
-
-#pagehelper配置
-pagehelper:
-  helperDialect: mysql
-  reasonable: true
-  supportMethodsArguments: true
-  params: count=countSql
 
 logging:
   level:
@@ -79,12 +75,9 @@ logging:
     name: ./logs/Perfree.log
     max-history: 7
     max-size: 10MB
-cache:
-  ehcache:
-    config: ehcache.xml
 
 swagger:
-  enable: false
+  enable: true
   application-name: PerfreeBlog
   application-version: ${version}
   application-description: PerfreeBlog接口文档

@@ -15,4 +15,5 @@ import org.springframework.stereotype.Component;
 @Component
 public interface UserMapper extends BaseMapper<User> {
 
+    User getLoginInfo(String account);
 }

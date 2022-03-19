@@ -59,6 +59,8 @@ public class User implements Serializable {
     @ApiModelProperty("更新时间")
     private Date updateTime;
 
+    private Role role;
+
     public Integer getId() {
         return id;
     }
@@ -142,6 +144,14 @@ public class User implements Serializable {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     @Override
