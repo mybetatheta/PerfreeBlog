@@ -5,6 +5,7 @@ import com.jfinal.template.Env;
 import com.jfinal.template.expr.ast.ExprList;
 import com.jfinal.template.io.Writer;
 import com.jfinal.template.stat.Scope;
+import com.perfree.commons.Constants;
 import com.perfree.service.ArticleService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 
 @TemplateDirective("articlePage")
 @Component
+@SuppressWarnings("all")
 public class ArticlePageDirective extends BaseDirective {
     private static ArticleService articleService;
 
@@ -55,6 +57,7 @@ public class ArticlePageDirective extends BaseDirective {
             orderBy = HtmlUtil.filter(orderBy);
             query.put("orderBy", orderBy);
         }
+        query.put("type", Constants.ARTICLE_TYPE_ARTICLE);
         articlePage.setForm(query);
         articlePage.setPageSize(getExprParamToInt("pageSize", 10));
         articlePage = articleService.frontArticlesPage(articlePage);

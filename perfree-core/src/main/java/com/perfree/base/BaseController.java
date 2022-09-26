@@ -53,8 +53,8 @@ public class BaseController {
      * 根据用户id获取后台菜单
      * @return List<Menu>
      */
-    public List<Menu> getMenuByUserIdAndType() {
-        return menuService.getMenuByUserIdAndType(getUser().getId(), 1);
+    public List<Menu> getMenuByUserIdAndType(int type) {
+        return menuService.getMenuByUserIdAndType(getUser().getId(), type);
     }
 
     /**
@@ -141,6 +141,25 @@ public class BaseController {
             return view("static/themes/" + currentTheme() + themeViewPath);
         } else {
             return view(adminViewPath);
+        }
+    }
+
+
+    /**
+     * 自动判断返回哪个页面(插件专用)
+     * @param validPath 要判断的地址
+     * @param themeViewPath 该页面在主题中的路径
+     * @param adminViewPath 该页面在系统中的路径
+     * @return String
+     */
+    public String pluginView(String validPath, String themeViewPath, String adminViewPath) {
+        File file = new File(Constants.PROD_THEMES_PATH + Constants.SEPARATOR + currentTheme() + validPath);
+        File devFile = com.perfree.commons.FileUtil.getClassPathFile(Constants.DEV_THEMES_PATH +
+                Constants.SEPARATOR + currentTheme() + validPath);
+        if (file.exists() || (devFile != null && devFile.exists())) {
+            return view("static/themes/" + currentTheme() + themeViewPath);
+        } else {
+            return adminViewPath;
         }
     }
 

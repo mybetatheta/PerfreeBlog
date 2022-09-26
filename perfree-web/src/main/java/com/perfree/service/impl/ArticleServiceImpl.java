@@ -50,18 +50,19 @@ public class ArticleServiceImpl implements ArticleService {
     public int add(Article article) {
         article.setViewCount(0L);
         article.setCommentCount(0L);
+        article.setGreatCount(0L);
         article.setCreateTime(new Date());
         article.setUpdateTime(new Date());
         genSummary(article);
         int result = articleMapper.add(article);
-        if (article.getArticleTags().size() > 0) {
+        if (null != article.getArticleTags() && article.getArticleTags().size() > 0) {
             article.getArticleTags().forEach(r -> {
                 r.setArticleId(article.getId());
             });
             // 添加标签关联
             articleMapper.addArticleTag(article.getArticleTags());
         }
-        if (article.getCategoryId() != null) {
+        if (null != article.getCategoryId()) {
             categoryService.addCount(article.getCategoryId());
         }
         if(StringUtils.isBlank(article.getSlug())) {
@@ -152,7 +153,7 @@ public class ArticleServiceImpl implements ArticleService {
         article.setUpdateTime(new Date());
         // 先删除标签关联
         articleMapper.deleteTagByArticleId(article.getId().toString());
-        if (article.getArticleTags().size() > 0) {
+        if (null != article.getArticleTags() && article.getArticleTags().size() > 0) {
             article.getArticleTags().forEach(r -> {
                 r.setArticleId(article.getId());
             });
@@ -181,11 +182,11 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     /**
-     * 获取最新的22条文章(后台首页)
+     * 获取最新的文章(后台首页)
      * @return List<Article
      */
-    public List<Article> getArticleListByDashboard() {
-        return articleMapper.getLatestArticle(22);
+    public List<Article> getArticleListByDashboard(int count) {
+        return articleMapper.getLatestArticle(count);
     }
 
     /**
@@ -276,22 +277,7 @@ public class ArticleServiceImpl implements ArticleService {
      */
     public Pager<Article> apiList(Pager<Article> pager) {
         PageHelper.startPage(pager.getPageIndex(), pager.getPageSize());
-        List<Article> articles = articleMapper.apiList(pager.getForm());
-        PageInfo<Article> pageInfo = new PageInfo<>(articles);
-        pager.setTotal(pageInfo.getTotal());
-        pager.setData(pageInfo.getList());
-        pager.setCode(Pager.SUCCESS_CODE);
-        return pager;
-    }
-
-    /**
-     * 获取最热文章分页数据(API)
-     * @param pager pager
-     * @return Pager<Article>
-     */
-    public Pager<Article> getApiHotArticleList(Pager<Article> pager, int type) {
-        PageHelper.startPage(pager.getPageIndex(), pager.getPageSize());
-        List<Article> articles = articleMapper.getApiHotArticleList(type, pager.getForm());
+        List<Article> articles = articleMapper.apiList(pager.getForm(), pager.getOrderBy());
         PageInfo<Article> pageInfo = new PageInfo<>(articles);
         pager.setTotal(pageInfo.getTotal());
         pager.setData(pageInfo.getList());
@@ -353,6 +339,11 @@ public class ArticleServiceImpl implements ArticleService {
         return pager;
     }
 
+    @Override
+    public void updateGreatCount(Long articleId) {
+        articleMapper.updateGreatCount(articleId);
+    }
+
 
     /**
      * @description 生成摘要
@@ -360,12 +351,13 @@ public class ArticleServiceImpl implements ArticleService {
      * @author Perfree
      */
     private void genSummary(Article article){
-        String isGenSummary = OptionCacheUtil.getDefaultValue(Constants.OPTION_WEB_AUTO_GEN_SUMMARY, Constants.WEB_AUTO_GEN_SUMMARY_FALSE);
+        String isGenSummary = OptionCacheUtil.getDefaultValue(Constants.OPTION_WEB_AUTO_GEN_SUMMARY, Constants.WEB_AUTO_GEN_SUMMARY_TRUE);
         if (!isGenSummary.equals(Constants.WEB_AUTO_GEN_SUMMARY_FALSE) && StringUtils.isBlank(article.getSummary())){
-            if (article.getContent().length() > 200){
-                article.setSummary(HtmlUtil.cleanHtmlTag(article.getContent()).substring(0, 200));
+            String mdToStr = HtmlUtil.cleanHtmlTag(MarkdownUtil.mdToHtml(article.getContent()));
+            if (mdToStr.length() > 200){
+                article.setSummary(mdToStr.substring(0, 200));
             } else {
-                article.setSummary(article.getContent());
+                article.setSummary(mdToStr);
             }
         }
     }

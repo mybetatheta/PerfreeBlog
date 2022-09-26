@@ -5,8 +5,12 @@ import com.perfree.commons.Pager;
 import com.perfree.commons.ResponseBean;
 import com.perfree.base.BaseController;
 import com.perfree.model.Category;
+import com.perfree.model.Tag;
 import com.perfree.permission.AdminMenu;
 import com.perfree.service.CategoryService;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.Logical;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.slf4j.Logger;
@@ -31,21 +35,10 @@ public class CategoryController extends BaseController  {
      */
     @RequestMapping("/category")
     @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR}, logical= Logical.OR)
-    @AdminMenu(name = "分类管理", seq = 4, groupId = Constants.ADMIN_MENU_GROUP_CONTENT,
+    @AdminMenu(name = "分类管理", seq = 5, groupId = Constants.ADMIN_MENU_GROUP_CONTENT,
             role = {Constants.ROLE_ADMIN, Constants.ROLE_EDITOR})
     public String index() {
         return view("static/admin/pages/category/category_list.html");
-    }
-
-    /**
-     * 分类添加页
-     * @return String
-     */
-    @RequestMapping("/category/addPage/{pid}")
-    @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR}, logical= Logical.OR)
-    public String addPage(@PathVariable("pid") String pid, Model model) {
-        model.addAttribute("pid", pid);
-        return view("static/admin/pages/category/category_add.html");
     }
 
     /**
@@ -56,6 +49,10 @@ public class CategoryController extends BaseController  {
     @ResponseBody
     @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR}, logical= Logical.OR)
     public ResponseBean add(@RequestBody @Valid Category category) {
+        Category categoryBySlug = categoryService.getBySlug(category.getSlug());
+        if (categoryBySlug != null){
+            return ResponseBean.fail("访问地址别名重复!", null);
+        }
         if (categoryService.add(category) > 0) {
             return ResponseBean.success("添加成功", null);
         }
@@ -87,17 +84,6 @@ public class CategoryController extends BaseController  {
     }
 
     /**
-     * 分类编辑页
-     * @return String
-     */
-    @RequestMapping("/category/editPage/{id}")
-    @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR}, logical= Logical.OR)
-    public String editPage(@PathVariable("id") String id, Model model) {
-        model.addAttribute("category", categoryService.getById(id));
-        return view("static/admin/pages/category/category_edit.html");
-    }
-
-    /**
      * 删除分类
      * @return String
      */
@@ -121,6 +107,16 @@ public class CategoryController extends BaseController  {
     @ResponseBody
     @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR}, logical= Logical.OR)
     public ResponseBean update(@RequestBody @Valid Category category) {
+        if (category.getPid().equals(category.getId())) {
+            return ResponseBean.fail("不可将当前分类设置为父级分类", null);
+        }
+        if (StringUtils.isBlank(category.getSlug())) {
+            return ResponseBean.fail("访问地址别名不能为空", null);
+        }
+        Category categoryBySlug = categoryService.getBySlug(category.getSlug());
+        if (categoryBySlug != null && !categoryBySlug.getId().equals(category.getId())){
+            return ResponseBean.fail("访问地址别名重复", null);
+        }
         if (categoryService.update(category) > 0) {
             return ResponseBean.success("更新成功", null);
         }
@@ -141,5 +137,12 @@ public class CategoryController extends BaseController  {
         }
         logger.error("分类修改失败: {}", category.toString());
         return ResponseBean.fail("修改失败", null);
+    }
+
+    @GetMapping("/category/getById")
+    @ResponseBody
+    public ResponseBean getById(@ApiParam(name="categoryId",value="分类ID",required=true) @RequestParam("categoryId") String categoryId) {
+        Category category = categoryService.getById(categoryId);
+        return ResponseBean.success("success", category);
     }
 }

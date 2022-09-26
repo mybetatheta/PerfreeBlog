@@ -1,21 +1,4 @@
 --PerfreeBlog
---v1.2.4;
-INSERT INTO `p_role`(`id`, `name`, `description`, `code`, `createTime`, `updateTime`) VALUES (3, '文章编辑', '文章编辑', 'editor', '2021-09-15 13:59:43', NULL);
-INSERT INTO `p_role`(`id`, `name`, `description`, `code`, `createTime`, `updateTime`) VALUES (4, '文章贡献', '文章贡献', 'contribute', '2021-09-15 14:00:21', NULL);
-UPDATE `p_role` SET `name` = '普通用户', `description` = '网站用户', `code` = 'user', `createTime` = '2020-12-17 13:11:50', `updateTime` = NULL WHERE `id` = 2;
---PerfreeBlog
---v1.2.8;
-ALTER TABLE `p_menu` ADD COLUMN `pluginId` varchar(128) NULL COMMENT '插件id';
---PerfreeBlog
---v1.3.1;
-ALTER TABLE `p_menu` MODIFY COLUMN `id` varchar(64) NOT NULL COMMENT '主键';
-ALTER TABLE `p_menu` MODIFY COLUMN `pid` varchar(64) NULL COMMENT '父级id';
-ALTER TABLE `p_menu` DROP COLUMN `pluginId`;
-ALTER TABLE `p_role_menu` MODIFY COLUMN `menuId` varchar(64) NOT NULL COMMENT '菜单id';
---PerfreeBlog
---v1.3.2;
-ALTER TABLE `p_option` MODIFY COLUMN `value` text NULL COMMENT 'value';
---PerfreeBlog
 --v2.0.0;
 ALTER TABLE `p_article` ADD COLUMN `slug` varchar(128) NULL COMMENT 'slug';
 ALTER TABLE `p_menu` DROP COLUMN `articleId`;
@@ -35,3 +18,22 @@ ALTER TABLE `p_article` ADD COLUMN `flag` varchar(256) NULL COMMENT '标识' , A
 --PerfreeBlog
 --v2.3.1;
 ALTER TABLE `p_attach` ADD COLUMN `saveType` varchar(32) NULL COMMENT '存储方式', ADD COLUMN `fileKey` varchar(512) NULL COMMENT 'fileKey';
+--PerfreeBlog
+--v3.0.0;
+ALTER TABLE `p_tag` ADD COLUMN `color` varchar(128) NULL COMMENT '颜色';
+ALTER TABLE `p_tag` ADD COLUMN `thumbnail` varchar(256) NULL COMMENT '缩略图';
+ALTER TABLE `p_tag` ADD COLUMN `slug` varchar(128) NULL COMMENT 'slug';
+UPDATE p_tag set slug = id where slug is null;
+ALTER TABLE `p_category` ADD COLUMN `thumbnail` varchar(256) NULL COMMENT '封面图';
+ALTER TABLE `p_category` ADD COLUMN `slug` varchar(128) NULL COMMENT 'slug';
+UPDATE p_category set slug = id where slug is null;
+ALTER TABLE `p_article` ADD COLUMN `greatCount` int NULL DEFAULT 0 COMMENT '点赞数';
+UPDATE p_article set greatCount = 0;
+ALTER TABLE `p_article` ADD INDEX `isTop`(`isTop`);
+ALTER TABLE `p_attach` ADD INDEX `type`(`type`), ADD INDEX `saveType`(`saveType`);
+ALTER TABLE `p_category` ADD INDEX `status`(`status`),ADD INDEX `slug`(`slug`);
+ALTER TABLE `p_tag` ADD INDEX `slug`(`slug`);
+ALTER TABLE `p_comment` ADD INDEX `articleId`(`articleId`), ADD INDEX `status`(`status`);
+ALTER TABLE `p_menu` ADD INDEX `type`(`type`), ADD INDEX `status`(`status`);
+ALTER TABLE `p_user` ADD INDEX `account`(`account`), ADD INDEX `status`(`status`);
+INSERT INTO `p_menu`(`id`, `pid`, `name`, `url`, `icon`, `seq`, `type`, `target`, `status`, `createTime`, `updateTime`) VALUES ('000000000000000000046b67a553452e','-1', '动态', '/journal', 'fa-newspaper-o', 99, 0, 0, 0, now(), now());

@@ -1,5 +1,7 @@
-let selectImgId = "",type = 1,EditorCm, EditorIcon, EditorCursor, EditorSelection,editor;
+let selectImgId = "",type = 1,EditorCm, EditorIcon, EditorCursor, EditorSelection,editor,attachId="";
 initSelectImg();
+initSelectVideo();
+initSelectAttach();
 /**
  * 初始化图片选择
  */
@@ -19,6 +21,12 @@ function initSelectImg() {
         const id = $(this).parent(".p-upload-box").attr('id');
         openSelectImPanel(1,id, null,null,null,null);
     });
+
+    $(".p-upload-input-box").on("click",function () {
+        const id = $(this).attr('id');
+        openSelectImPanel(0,id, null,null,null,null);
+    });
+
 
     $(".p-upload-box").on('mouseenter', '.p-upload-show', function() {
         $(this).children(".p-delete-img").show();
@@ -45,13 +53,29 @@ function initSelectImg() {
     });
 }
 
+function initSelectVideo() {
+    $(".p-upload-video-input-box").on("click",function () {
+        const id = $(this).attr('id');
+        openSelectVideoPanel(4, null,null, null, null, null, id)
+    });
+}
+
+function initSelectAttach() {
+    $(".p-upload-attach-input-box").on("click",function () {
+        const id = $(this).attr('id');
+        openSelectAttachPanel(4,null,null, null, null, null, id);
+    });
+}
+
 /**
  * 选择图片
  * @param path
  * @param name
  */
 function selectImg(path, name) {
-    if (type === 1){
+    if (type === 0) {
+        $("input[name='"+selectImgId+"']").val(path);
+    } else if (type === 1){
         $("#" + selectImgId).children("input").val(path);
         $("#" + selectImgId).children(".p-upload-show").children(".p-show-img").attr("src", path);
         $("#" + selectImgId).children(".p-upload").hide();
@@ -69,7 +93,7 @@ function selectImg(path, name) {
 
 /**
  * 打开选择图片面板
- * @param activeType 1:正常图片选择,2编辑器图片选择,3富文本
+ * @param activeType 0:input方式图片选择,1:正常图片选择,2编辑器图片选择,3富文本
  * @param id
  * @param currEditor
  * @param cm
@@ -79,7 +103,7 @@ function selectImg(path, name) {
  */
 function openSelectImPanel(activeType,id,currEditor,cm, icon, cursor, selection) {
     type = activeType;
-    if (type === 1) {
+    if (type === 1 || type === 0) {
         selectImgId = id;
     } else if(type === 3) {
         editor = currEditor;
@@ -94,7 +118,7 @@ function openSelectImPanel(activeType,id,currEditor,cm, icon, cursor, selection)
         title: "选择图片",
         type: 2,
         offset: '10%',
-        area:  ['700px', '510px'],
+        area: layerArea($("html")[0].clientWidth, 700, 500),
         shadeClose: true,
         anim: 1,
         move: true,
@@ -104,20 +128,21 @@ function openSelectImPanel(activeType,id,currEditor,cm, icon, cursor, selection)
 
 /**
  * 打开选择附件面板
- * @param activeType 1:正常图片选择,2编辑器图片选择,3富文本
+ * @param activeType
  * @param currEditor
  * @param cm
  * @param icon
  * @param cursor
  * @param selection
+ * @param id
  */
-function openSelectAttachPanel(activeType,currEditor,cm, icon, cursor, selection) {
-    changeMode(activeType, currEditor,cm, icon, cursor, selection);
+function openSelectAttachPanel(activeType,currEditor,cm, icon, cursor, selection, id = null) {
+    changeMode(activeType, currEditor,cm, icon, cursor, selection, id);
     layer.open({
         title: "选择附件",
         type: 2,
         offset: '10%',
-        area:  ['700px', '510px'],
+        area:  layerArea($("html")[0].clientWidth, 700, 500),
         shadeClose: true,
         anim: 1,
         move: true,
@@ -127,20 +152,21 @@ function openSelectAttachPanel(activeType,currEditor,cm, icon, cursor, selection
 
 /**
  * 打开选择视频面板
- * @param activeType 1:正常图片选择,2编辑器图片选择,3富文本
+ * @param activeType
  * @param currEditor
  * @param cm
  * @param icon
  * @param cursor
  * @param selection
+ * @param id
  */
-function openSelectVideoPanel(activeType, currEditor,cm, icon, cursor, selection) {
-    changeMode(activeType, currEditor,cm, icon, cursor, selection);
+function openSelectVideoPanel(activeType, currEditor,cm, icon, cursor, selection, id = null) {
+    changeMode(activeType, currEditor,cm, icon, cursor, selection,id);
     layer.open({
         title: "选择视频",
         type: 2,
         offset: '10%',
-        area:  ['700px', '510px'],
+        area: layerArea($("html")[0].clientWidth, 700, 500),
         shadeClose: true,
         anim: 1,
         move: true,
@@ -162,6 +188,8 @@ function selectVideo(path) {
         editor.focus();
     } else if (type === 3) {
         editor.cmd.do('insertHTML', '<video src="'+path+'" controls="controls" style="max-width: 100%"></video>');
+    } else if (type === 4) {
+        $("input[name='"+attachId+"']").val(path);
     }
 }
 
@@ -180,11 +208,13 @@ function selectAttach(name,path) {
         editor.focus();
     } else if (type === 3) {
         editor.cmd.do('insertHTML', '<a href="'+path+name+'">'+name+'</a>');
+    } else if (type === 4) {
+        $("input[name='"+attachId+"']").val(path);
     }
 }
 
 
-function changeMode(activeType, currEditor,cm, icon, cursor, selection) {
+function changeMode(activeType, currEditor,cm, icon, cursor, selection,id) {
     type = activeType;
     if (activeType === 1) {
         EditorCm = cm;
@@ -194,5 +224,19 @@ function changeMode(activeType, currEditor,cm, icon, cursor, selection) {
         editor = currEditor;
     } else if(type === 3){
         editor = currEditor;
+    } else if(type === 4) {
+        attachId = id;
+    }
+}
+
+function layerArea(clientWidth, width, height) {
+    if (height !== 'auto') {
+        height += 'px';
+    }
+    var a = clientWidth - width;
+    if(a > 10) {
+        return [width + 'px', height]
+    } else{
+        return ['100%', height]
     }
 }

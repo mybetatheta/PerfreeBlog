@@ -6,18 +6,20 @@ import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.setting.dialect.Props;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.jfinal.template.Directive;
-import com.perfree.commons.Constants;
-import com.perfree.commons.DynamicDataSource;
-import com.perfree.commons.SpringBeanUtils;
-import com.perfree.commons.StringUtil;
+import com.perfree.commons.*;
 import com.perfree.directive.TemplateDirective;
 import com.perfree.model.Plugin;
+import com.perfree.model.Theme;
 import com.perfree.permission.AdminMenuGroup;
 import com.perfree.permission.MenuManager;
 import com.perfree.plugin.PluginManagerService;
 import com.perfree.service.MenuService;
 import com.perfree.service.OptionService;
 import com.perfree.service.PluginService;
+import com.perfree.service.ThemeService;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Ehcache;
+import net.sf.ehcache.Element;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ import java.util.Map;
 @Component
 public class PostAppRunner implements ApplicationRunner {
     private final static Logger LOGGER = LoggerFactory.getLogger(PostAppRunner.class);
+    private static final CacheManager cacheManager = CacheManager.newInstance();
 
     @Value("${version}")
     private String version;
@@ -48,13 +51,15 @@ public class PostAppRunner implements ApplicationRunner {
     private final MenuService menuService;
     private final PluginManagerService pluginManagerService;
     private final PluginService pluginService;
+    private final ThemeService themeService;
 
     public PostAppRunner(PluginManagerService pluginManagerService,OptionService optionService,
-                         MenuService menuService,PluginService pluginService) {
+                         MenuService menuService,PluginService pluginService, ThemeService themeService) {
         this.optionService = optionService;
         this.menuService = menuService;
         this.pluginManagerService = pluginManagerService;
         this.pluginService = pluginService;
+        this.themeService = themeService;
     }
 
     @Override
@@ -82,13 +87,14 @@ public class PostAppRunner implements ApplicationRunner {
         }
         dbSetting.autoLoad(true);
         // Load options and put into memory
-        if (DynamicDataSource.getDataSource() != null) {
+        if (DynamicDataSource.getDataSource() != null && DynamicDataSource.dataSourceIsInit) {
             if (dbSetting.getStr("dataVersion") == null || !dbSetting.getStr("dataVersion").equals(version)) {
                 updateSql(dbSetting);
             }
             optionService.initOptionCache();
             List<AdminMenuGroup> adminMenuGroups = MenuManager.initSystemMenu();
             menuService.initSystemMenu(adminMenuGroups);
+            initTheme();
             initPlugins();
         }
     }
@@ -139,13 +145,6 @@ public class PostAppRunner implements ApplicationRunner {
                         }
                     }
                 }
-                // 临时: 小于128版本,清除插件目录
-                if (StringUtil.versionToLong(dbVersion) < 128) {
-                    File pluginFile = new File(Constants.PLUGIN_PATH);
-                    if (pluginFile.exists()){
-                        FileUtil.clean(pluginFile.getAbsolutePath());
-                    }
-                }
 
                 File file = new File(Constants.DB_PROPERTIES_PATH);
                 Props newDbSetting = new Props(FileUtil.touch(file), CharsetUtil.CHARSET_UTF_8);
@@ -185,6 +184,15 @@ public class PostAppRunner implements ApplicationRunner {
                 LOGGER.info("Add Directive: {}", injectBean.value());
                 EnjoyConfig.jfr.addDirective(injectBean.value(), directive.getClass());
             }
+        }
+    }
+
+    private void initTheme() {
+        String currTheme = OptionCacheUtil.getValue(Constants.OPTION_WEB_THEME);
+        Theme themeByPath = themeService.getThemeByPath(currTheme);
+        Ehcache cache = cacheManager.getEhcache("optionData");
+        if (themeByPath != null && StringUtils.isNotBlank(themeByPath.getType())) {
+            cache.put(new Element(Constants.OPTION_WEB_THEME_TYPE, themeByPath.getType()));
         }
     }
 }

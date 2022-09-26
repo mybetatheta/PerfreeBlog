@@ -1,18 +1,95 @@
-let table, treeTable, layPage, form;
-let pageIndex = 1, pageSize = 20;
-layui.config({
-    base: '/static/public/libs/layuiComponents/'
-}).extend({
-    treeTable: 'treetable-lay/treeTable'
-})
-layui.use(['table', 'treeTable', 'laypage', 'form'], function () {
+var table, treeTable, layPage, form,$,toast, xmSelect,categorySelect;
+let pageIndex = 1, pageSize = 10;
+let formType = 'add';
+layui.use(['table', 'treeTable', 'laypage', 'form', 'jquery','toast', 'xmSelect'], function () {
     table = layui.table;
     treeTable = layui.treeTable;
     layPage = layui.laypage;
+    xmSelect = layui.xmSelect;
     form = layui.form;
+    $ = layui.jquery;
+    toast = layui.toast;
     initPage();
+    initCategory();
+    $("#restBtn").on("click",function () {
+        if (formType === 'add') {
+            categorySelect.setValue([]);
+            $(".addForm")[0].reset();
+            form.render();
+        } else {
+            toAddFunc();
+        }
+    });
+
+    form.verify({});
+    // 表单提交
+    form.on('submit(addForm)', function (data) {
+        data.field.pid = "-1";
+        if (categorySelect.getValue().length > 0) {
+            data.field.pid = categorySelect.getValue()[0].value;
+        }
+        if (formType === 'add') {
+            addSubmit(data);
+        } else {
+            updateSubmit(data);
+        }
+        return false;
+    });
 });
 
+function updateSubmit(data) {
+    $.ajax({
+        type: "POST",
+        url: "/admin/category/update",
+        contentType: "application/json",
+        data: JSON.stringify(data.field),
+        success: function (res) {
+            if (res.code === 200) {
+                queryTable();
+                parent.toast.success({message: '更新成功',position: 'topCenter'});
+                toAddFunc();
+            } else {
+                parent.toast.error({message: res.msg,position: 'topCenter'});
+            }
+        },
+        error: function (res) {
+            parent.toast.error({message: "更新失败",position: 'topCenter'});
+        }
+    });
+}
+
+function addSubmit(data) {
+    $.ajax({
+        type: "POST",
+        url: "/admin/category/add",
+        contentType: "application/json",
+        data: JSON.stringify(data.field),
+        success: function (res) {
+            if (res.code === 200) {
+                queryTable();
+                initCategory();
+                parent.toast.success({message: '添加成功',position: 'topCenter'});
+                $(".addForm")[0].reset();
+                categorySelect.setValue([]);
+                form.render();
+            } else {
+                parent.toast.error({message: res.msg,position: 'topCenter'});
+            }
+        },
+        error: function (res) {
+            parent.toast.error({message: "添加失败",position: 'topCenter'});
+        }
+    });
+}
+
+function toAddFunc() {
+    $(".addForm")[0].reset();
+    categorySelect.setValue([]);
+    form.render();
+    formType = 'add';
+    $("#restBtn").text("重置");
+    $("#form-title").text("添加分类");
+}
 
 /**
  * 页面初始化事件
@@ -20,19 +97,11 @@ layui.use(['table', 'treeTable', 'laypage', 'form'], function () {
 function initPage() {
     queryTable();
 
-    layer.config({
-        offset: '20%'
-    });
-
     // 查询
     $("#queryBtn").click(function () {
         queryTable();
     });
 
-    // 添加
-    $("#addBtn").click(function () {
-        add();
-    });
 }
 
 
@@ -52,7 +121,7 @@ function queryTable() {
             pageSize: pageSize,
             pageIndex: pageIndex,
             form: {
-                name: $("#name").val()
+                name: $("#categoryName").val()
             }
         },
         tree: {
@@ -86,12 +155,11 @@ function queryTable() {
             };
         },
         cols: [[
-            {field: 'id', title: 'ID', width: 80},
-            {field: 'name', minWidth: 160,title: '分类名'},
-            {field: 'desc', minWidth: 260,title: '描述'},
-            {field: 'count', minWidth: 80,align: 'center', title: '文章数量'},
-            {field: 'metaKeywords', minWidth: 160,title: 'SEO关键字'},
-            {field: 'metaDescription', minWidth: 160,title: 'SEO描述内容'},
+            {field: 'id', title: 'ID', width: 60},
+            {field: 'name', minWidth: 180,title: '分类名'},
+            {field: 'desc', minWidth: 180,title: '描述'},
+            {field: 'slug', minWidth: 160,title: '访问别名'},
+            {field: 'count', minWidth: 100,align: 'center', title: '文章数量'},
             {
                 field: 'status', minWidth: 100,title: '状态', templet: function (d) {
                     let html;
@@ -104,24 +172,12 @@ function queryTable() {
                 }
             },
             {
-                field: 'createTime',
-                title: '创建时间',
-                minWidth: 160,
-                templet: "<span>{{d.createTime ==null?'':layui.util.toDateString(d.createTime, 'yyyy-MM-dd HH:mm:ss')}}</span>"
-            },
-            {
-                field: 'updateTime',
-                title: '更新时间',
-                minWidth: 160,
-                templet: "<span>{{d.updateTime ==null?'':layui.util.toDateString(d.updateTime, 'yyyy-MM-dd HH:mm:ss')}}</span>"
-            },
-            {
-                field: 'id', title: '操作', width: 160,
+                field: 'id', title: '操作', width: 220,
                 templet: function (d) {
                     let html = "<div>"
-                    html += "<a class='layui-btn layui-btn-primary layui-btn-xs' onclick='add(\"" + d.id + "\")'>添加</a> " +
-                        "<a class='layui-btn layui-btn-normal layui-btn-xs' onclick='editData(\"" + d.id + "\")'>编辑</a> " +
-                        "<a class='layui-btn layui-btn-danger layui-btn-xs' onclick='deleteData(\"" + d.id + "\")'>删除</a>" +
+                    html += "<a class='pear-btn pear-btn-xs pear-btn-primary' onclick='addChild(\"" + d.id + "\")'>添加子分类</a> " +
+                        "<a class='pear-btn pear-btn-xs pear-btn-primary' onclick='editData(\"" + d.id + "\")'>编辑</a> " +
+                        "<a class='pear-btn pear-btn-xs pear-btn-danger' onclick='deleteData(\"" + d.id + "\")'>删除</a>" +
                         "</div>";
                     return html;
                 }
@@ -146,13 +202,24 @@ function queryTable() {
  * @param id
  */
 function editData(id) {
-    layer.open({
-        title: "编辑分类",
-        type: 2,
-        area: common.layerArea($("html")[0].clientWidth, 500, 400),
-        shadeClose: true,
-        anim: 1,
-        content: '/admin/category/editPage/' + id
+    $.get("/admin/category/getById?categoryId="+id,function(data,status){
+        if (data.code === 200) {
+            $("input[name='id']").val(data.data.id);
+            $("input[name='name']").val(data.data.name);
+            $("textarea[name='desc']").val(data.data.desc);
+            $("select[name='status']").val(data.data.status + "");
+            $("input[name='metaKeywords']").val(data.data.metaKeywords);
+            $("input[name='slug']").val(data.data.slug);
+            $("input[name='thumbnail']").val(data.data.thumbnail);
+            $("textarea[name='metaDescription']").val(data.data.metaDescription);
+            categorySelect.setValue([data.data.pid]);
+            form.render("select");
+            $("#form-title").text("修改分类");
+            $("#restBtn").text("返回添加");
+            formType = 'edit';
+        } else {
+            parent.toast.error({message: data.msg,position: 'topCenter'});
+        }
     });
 }
 
@@ -170,13 +237,14 @@ function deleteData(ids) {
             success: function (data) {
                 if (data.code === 200) {
                     queryTable();
-                    layer.msg(data.msg, {icon: 1});
+                    initCategory();
+                    parent.toast.success({message: "删除成功",position: 'topCenter'});
                 } else {
-                    layer.msg(data.msg, {icon: 2});
+                    parent.toast.error({message: data.msg,position: 'topCenter'});
                 }
             },
             error: function (data) {
-                layer.msg("删除失败", {icon: 2});
+                parent.toast.error({message: "删除失败",position: 'topCenter'});
             }
         });
         layer.close(index);
@@ -186,19 +254,10 @@ function deleteData(ids) {
 /**
  * 添加
  */
-function add(pid = -1) {
-    let title = "添加一级分类";
-    if (pid !== -1) {
-        title = "添加子分类";
-    }
-    layer.open({
-        title: title,
-        type: 2,
-        area: common.layerArea($("html")[0].clientWidth, 500, 400),
-        shadeClose: true,
-        anim: 1,
-        content: '/admin/category/addPage/' + pid
-    });
+function addChild(pid) {
+    toAddFunc();
+    categorySelect.setValue([pid]);
+    $("input[name='name']").focus();
 }
 
 /**
@@ -215,13 +274,46 @@ function changeStatus(id, status) {
         success: function (data) {
             if (data.code === 200) {
                 queryTable();
-                layer.msg(data.msg, {icon: 1});
+                parent.toast.success({message: "修改成功",position: 'topCenter'});
             } else {
-                layer.msg(data.msg, {icon: 2});
+                parent.toast.error({message: data.msg,position: 'topCenter'});
             }
         },
         error: function (data) {
-            layer.msg("修改状态失败", {icon: 2});
+            parent.toast.error({message: "修改状态失败",position: 'topCenter'});
+        }
+    });
+}
+
+/**
+ * 初始化分类选择框
+ */
+function initCategory() {
+    $.get("/admin/category/allList", function (res) {
+        if (res.code === 200) {
+            categorySelect = xmSelect.render({
+                el: '#pid',
+                theme: {
+                    color: localStorage.getItem("theme-color-color"),
+                },
+                model: {label: {type: 'text'}},
+                radio: true,
+                tips: '默认顶级分类',
+                filterable: true,
+                searchTips: '输入分类名搜索',
+                clickClose: true,
+                tree: {
+                    show: true,
+                    strict: false,
+                    expandedKeys: [-1],
+                },
+                height: 'auto',
+                data() {
+                    return res.data
+                }
+            });
+        } else {
+            parent.toast.error({message: res.msg,position: 'topCenter'});
         }
     });
 }

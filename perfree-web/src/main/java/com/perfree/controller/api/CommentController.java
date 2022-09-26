@@ -38,7 +38,7 @@ import java.util.Map;
 @RestController
 @CrossOrigin
 @Api(value = "评论相关",tags = "评论相关")
-@RequestMapping("/api/comment")
+@RequestMapping(value = {"/api/comment", "/comments"})
 @SuppressWarnings("all")
 public class CommentController extends BaseApiController {
     //缓存
@@ -63,6 +63,7 @@ public class CommentController extends BaseApiController {
             @ApiImplicitParam(name = "website", value = "网址", dataTypeClass = String.class),
             @ApiImplicitParam(name = "email", value = "邮箱", dataTypeClass = String.class)
     })
+    @AccessCacheLock
     public ResponseBean submitComment(@ApiIgnore @Valid Comment comment, @ApiIgnore HttpServletRequest request){
         Article article = articleService.getById(comment.getArticleId().toString());
         if(article.getIsComment() == 0) {

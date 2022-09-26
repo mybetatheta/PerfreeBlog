@@ -2,32 +2,14 @@
 #@layout()
 #define css()
     <link rel="stylesheet" href="/static/themes/default/static/css/index.css?v=#(version)">
-    <style>
-        .d-banner{
-            #if(option('HOME_BANNER') == "0")
-                background: url(#option("HOME_BANNER_IMG", "/static/themes/default/static/imgs/bg.jpg")) center/cover no-repeat;
-            #else if(option('HOME_BANNER') == "1")
-                background: url(#option("HOME_BANNER_IMG_LINK", "/static/themes/default/static/imgs/bg.jpg")) center/cover no-repeat;
-            #else if(option('HOME_BANNER') == "2")
-                background: #option("HOME_BANNER_COLOR", "#111111");
-            #else
-                background: url(/static/themes/default/static/imgs/bg.jpg) center/cover no-repeat;
-            #end
-        }
-        .d-hero-box .d-hero-title{
-            color: #option('HOME_TITLE_COLOR', 'var(--hero-color)');
-        }
-        .d-hero-box .d-hero-desc{
-            color: #option('HOME_SUB_TITLE_COLOR', 'var(--hero-color)');
-        }
-    </style>
+    #include("/static/themes/default/inc/custom_bg.html")
 #end
 #define content()
     <div class="d-wrapper">
         <div class="d-banner">
             <div class="d-hero-box">
-                <h1 class="d-hero-title wow fadeInUp" data-wow-duration="0.2s">#option('DEFAULT_HERO_TITLE')</h1>
-                <p class="d-hero-desc wow fadeInUp" data-wow-duration="0.4s">#option('DEFAULT_HERO_SUB_TITLE')</p>
+                <h1 class="d-hero-title wow fadeInUp" data-wow-duration="0.2s">#option('DEFAULT_HERO_TITLE', 'Perfree')</h1>
+                <p class="d-hero-desc wow fadeInUp" data-wow-duration="0.4s">#option('DEFAULT_HERO_SUB_TITLE', '简简单单的生活,安安静静的写博客')</p>
             </div>
         </div>
     </div>

@@ -22,6 +22,7 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -48,6 +49,8 @@ public class SystemController {
     private MailService mailService;
     @Autowired
     private MenuService menuService;
+    @Value("${shiro.timeout}")
+    private Long timeout;
 
     /**
      * 登录
@@ -61,6 +64,7 @@ public class SystemController {
             @ApiImplicitParam(name = "account", value = "账户", dataTypeClass = String.class,  required = true),
             @ApiImplicitParam(name = "password", value = "密码", dataTypeClass = String.class,  required = true)
     })
+    @AccessCacheLock
     public ResponseBean doLogin(String account, String password) {
         int count = 1;
         Ehcache cache = cacheManager.getEhcache("loginCache");
@@ -84,6 +88,7 @@ public class SystemController {
             HashMap<String, Object> result = new HashMap<>();
             result.put("user", userByAccount);
             result.put("token", token);
+            subject.getSession().setTimeout(timeout * 1000 * 60);
             return ResponseBean.success("登录成功", result);
         }catch (IncorrectCredentialsException e) {
             if (count < 8) {
@@ -130,6 +135,7 @@ public class SystemController {
             @ApiImplicitParam(name = "userName", value = "昵称/用户名", dataTypeClass = String.class,  required = true),
             @ApiImplicitParam(name = "email", value = "邮箱", dataTypeClass = String.class,  required = true)
     })
+    @AccessCacheLock
     public ResponseBean doRegister(@ApiIgnore @Valid User user,@ApiIgnore  HttpSession session) {
         Option optionByKey = optionService.getOptionByKey(Constants.OPTION_WEB_IS_REGISTER);
         if (optionByKey != null && optionByKey.getValue().equals(String.valueOf(Constants.REGISTER_NO))) {
@@ -173,6 +179,7 @@ public class SystemController {
             @ApiImplicitParam(name = "account", value = "账户", dataTypeClass = String.class,  required = true),
             @ApiImplicitParam(name = "email", value = "邮箱", dataTypeClass = String.class,  required = true)
     })
+    @AccessCacheLock
     public ResponseBean doSendRestPassMail(@ApiIgnore User user, @ApiIgnore  HttpSession session) {
         User queryUser = userService.getUserByAccountAndEmail(user.getAccount(), user.getEmail());
         if (queryUser == null) {

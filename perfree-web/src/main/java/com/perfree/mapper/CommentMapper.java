@@ -17,7 +17,7 @@ public interface CommentMapper {
      * @param content content
      * @return List<Comment>
      */
-    List<Comment> getList(@Param("content") String content, @Param("userId") String userId);
+    List<Comment> getList(@Param("content") String content,@Param("articleType") String articleType,  @Param("userId") String userId);
 
     /**
      * 删除评论
@@ -39,10 +39,10 @@ public interface CommentMapper {
     Long getCommentCount();
 
     /**
-     * 获取最新的22条评论(后台首页)
+     * 获取最新的评论(后台首页)
      * @return List<Comment>
      */
-    List<Comment> getCommentListByDashboard();
+    List<Comment> getCommentListByDashboard(int count);
 
 
     List<Comment> getCommentByArticleId(HashMap<String, String> form);

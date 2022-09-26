@@ -1,6 +1,9 @@
-let table;
-layui.use('table', function () {
+let table, $,toast,util;
+layui.use(['table', 'jquery','toast','util'], function () {
     table = layui.table;
+    $ = layui.jquery;
+    toast = layui.toast;
+    util = layui.util;
     initPage();
 });
 
@@ -9,10 +12,6 @@ layui.use('table', function () {
  */
 function initPage() {
     queryTable();
-
-    layer.config({
-        offset: '20%'
-    });
 
     // 查询
     $("#queryBtn").click(function () {
@@ -23,7 +22,7 @@ function initPage() {
     $("#batchDeleteBtn").click(function () {
         const checkStatus = table.checkStatus('tableBox'), data = checkStatus.data;
         if (data.length <= 0) {
-            layer.msg("至少选择一条数据", {icon: 2});
+            parent.toast.warning({message: "至少选择一条数据",position: 'topCenter'});
         } else {
             let ids = "";
             data.forEach(res => {
@@ -50,7 +49,8 @@ function queryTable() {
         totalRow: false,
         where: {
             form: {
-                content: $("#content").val()
+                content: $("#content").val(),
+                articleType: $("#articleType").val()
             }
         },
         limit: 30,
@@ -63,8 +63,19 @@ function queryTable() {
             {
                 field: 'email', minWidth: 180, title: '邮箱', templet: "<div>{{d.email}}</div>"
             },
-            {field: 'content', title: '评论内容', minWidth: 240},
-            {field: 'article', title: '所属文章', minWidth: 240, templet: "<div><a href='{{d.article.url}}' target='_blank'>{{d.article.title}}</a></div>"},
+            {field: 'content', title: '评论内容', minWidth: 240, templet: contentFormat},
+            {
+                field: 'article',
+                title: '所属文章',
+                minWidth: 240,
+                templet: function (d) {
+                    if (d.article.type === 'article' || d.article.type === 'page' ) {
+                        return `<div><a href='${d.article.url}' target='_blank'>${d.article.title}</a></div>`;
+                    }else{
+                        return `<div><div>${d.article.content}</div></div>`;
+                    }
+                }
+            },
             {field: 'status', minWidth: 60, title: '状态', templet: "<div>{{d.status === 1? '待审核': '正常'}}</div>"},
             {
                 field: 'createTime',
@@ -79,9 +90,11 @@ function queryTable() {
                 templet: function (d) {
                     let html = "<div>";
                     if (d.status === 1) {
-                        html += "<a class='layui-btn layui-btn-primary layui-btn-xs' onclick='changeStatus(\"" + d.id + "\",\"0\")'>审核</a>";
+                        html += "<a class='pear-btn pear-btn-xs pear-btn-primary' onclick='changeStatus(\"" + d.id + "\",\"0\")'>审核</a>";
+                    } else {
+                        html += `<a class='pear-btn pear-btn-xs pear-btn-primary' onclick="reply('${d.id}', '${d.userName}')">回复</a>`;
                     }
-                    html += "<a class='layui-btn layui-btn-danger layui-btn-xs' onclick='deleteData(\"" + d.id + "\")'>删除</a>" +
+                    html += "<a class='pear-btn pear-btn-xs pear-btn-danger' style='margin-left: 5px' onclick='deleteData(\"" + d.id + "\")'>删除</a>" +
                         "</div>";
                     return html;
                 }
@@ -118,13 +131,13 @@ function deleteData(ids) {
             success: function (data) {
                 if (data.code === 200) {
                     queryTable();
-                    layer.msg(data.msg, {icon: 1});
+                    parent.toast.success({message: "删除成功",position: 'topCenter'});
                 } else {
-                    layer.msg(data.msg, {icon: 2});
+                    parent.toast.error({message: data.msg,position: 'topCenter'});
                 }
             },
             error: function (data) {
-                layer.msg("删除失败", {icon: 2});
+                parent.toast.error({message: "删除失败",position: 'topCenter'});
             }
         });
         layer.close(index);
@@ -145,13 +158,31 @@ function changeStatus(id, status) {
         success: function (data) {
             if (data.code === 200) {
                 queryTable();
-                layer.msg(data.msg, {icon: 1});
+                parent.toast.success({message: "操作成功",position: 'topCenter'});
             } else {
-                layer.msg(data.msg, {icon: 2});
+                parent.toast.error({message: data.msg,position: 'topCenter'});
             }
         },
         error: function (data) {
-            layer.msg("操作失败", {icon: 2});
+            parent.toast.error({message: "操作失败",position: 'topCenter'});
         }
     });
+}
+
+/**
+ * 回复
+ */
+function reply(id, userName) {
+    layer.open({
+        title: '回复:' + userName,
+        type: 2,
+        area: common.layerArea($("html")[0].clientWidth, 500, 500),
+        shadeClose: true,
+        anim: 1,
+        content: '/admin/comment/reply/' + id
+    });
+}
+
+function contentFormat(d){
+    return '<div>' + d.content + '</div>';
 }

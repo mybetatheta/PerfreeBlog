@@ -25,6 +25,7 @@ import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -49,20 +50,17 @@ public class SystemController extends BaseController {
     @Autowired
     private UserService userService;
     @Autowired
-    private OptionService optionService;
-    @Autowired
     private SEOService seoService;
     @Autowired
     private MailService mailService;
-
     @Autowired
     private UpdateService updateService;
-
     @Autowired
     private RoleService roleService;
-
     @Autowired
     private RssServices rssServices;
+    @Value("${shiro.timeout}")
+    private Long timeout;
 
     /**
      * 后台首页
@@ -72,10 +70,17 @@ public class SystemController extends BaseController {
     @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR, Constants.ROLE_CONTRIBUTE,
             Constants.ROLE_USER}, logical= Logical.OR)
     public String adminIndex(Model model) {
-        List<Menu> menus = getMenuByUserIdAndType();
-        model.addAttribute("menus", menus);
         model.addAttribute("user", getUser());
         return view("static/admin/pages/index.html");
+    }
+
+    @PostMapping("/admin/menu/getAdminMenu")
+    @ResponseBody
+    @RequiresRoles(value={Constants.ROLE_ADMIN, Constants.ROLE_EDITOR, Constants.ROLE_CONTRIBUTE,
+            Constants.ROLE_USER}, logical= Logical.OR)
+    public ResponseBean getAdminMenu() {
+        List<Menu> menus = getMenuByUserIdAndType(1);
+        return ResponseBean.success("success", menus);
     }
 
     /**
@@ -83,6 +88,7 @@ public class SystemController extends BaseController {
      * @return String
      */
     @RequestMapping("/")
+    @FrontViewNodeRender
     public String index(Model model) {
         model.addAttribute("url", Constants.URL_ARTICLE_LIST);
         return view(currentThemePage() + "/index.html");
@@ -98,6 +104,7 @@ public class SystemController extends BaseController {
     }
 
     @RequestMapping("/html/{name}")
+    @FrontViewNodeRender
     public String renderHtml(@PathVariable String name) {
         return view(currentThemePage() + "/html/" + name + ".html");
     }
@@ -136,6 +143,7 @@ public class SystemController extends BaseController {
     @RequestMapping(method = RequestMethod.POST, path = "/doLogin")
     @ResponseBody
     @SuppressWarnings("all")
+    @AccessCacheLock
     public ResponseBean doLogin(@RequestBody User user,Boolean rememberMe, HttpSession session, HttpServletResponse response) {
         if(rememberMe == null) {
             rememberMe = false;
@@ -168,6 +176,7 @@ public class SystemController extends BaseController {
             HashMap<String, Object> result = new HashMap<>();
             result.put("user", userByAccount);
             result.put("token", token);
+            subject.getSession().setTimeout(timeout * 1000 * 60);
             return ResponseBean.success("登录成功", result);
         }catch (IncorrectCredentialsException e) {
             session.removeAttribute("CAPTCHA_CODE");
@@ -198,6 +207,7 @@ public class SystemController extends BaseController {
      */
     @RequestMapping(method = RequestMethod.POST, path = "/doRestPassword")
     @ResponseBody
+    @AccessCacheLock
     public ResponseBean doRestPassword(@RequestBody User user, HttpSession session) {
         if (StringUtils.isBlank(user.getCaptcha()) ||
                 !user.getCaptcha().toUpperCase().equals(session.getAttribute("CAPTCHA_CODE").toString())){
@@ -213,6 +223,7 @@ public class SystemController extends BaseController {
         }
         try {
             String random = RandomUtil.randomString(4);
+            logger.error("重置密码-验证码:{}", random);
             mailService.passwordMail(user, random);
             session.setAttribute("REST-CAPTCHA", random);
             session.setAttribute("REST-ID", queryUser.getId());
@@ -231,6 +242,7 @@ public class SystemController extends BaseController {
      */
     @RequestMapping(method = RequestMethod.POST, path = "/doRestPasswordStep2")
     @ResponseBody
+    @AccessCacheLock
     public ResponseBean doRestPasswordStep2(@RequestBody User user, HttpSession session) {
         Object sessionRestPassword = session.getAttribute("REST-CAPTCHA");
         Object sessionRestID = session.getAttribute("REST-ID");
@@ -273,6 +285,7 @@ public class SystemController extends BaseController {
      */
     @RequestMapping(method = RequestMethod.POST, path = "/doRegister")
     @ResponseBody
+    @AccessCacheLock
     public ResponseBean doRegister(@RequestBody @Valid User user, HttpSession session) {
         String isRegister = OptionCacheUtil.getValue(Constants.OPTION_WEB_IS_REGISTER);
         if (StringUtils.isNotBlank(isRegister) && isRegister.equals(String.valueOf(Constants.REGISTER_NO))) {

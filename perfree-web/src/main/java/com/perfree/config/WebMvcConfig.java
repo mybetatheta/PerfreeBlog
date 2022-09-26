@@ -31,6 +31,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations(
                         "classpath:/static/",
                         "file:./resources/static/",
+                        "file:./resources/static/themeResources/",
                         "file:./resources/plugin/",
                         "file:" + uploadPath
                 );
@@ -70,7 +71,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 );
 
         registry.addInterceptor(new ApiInterceptor())
-                .addPathPatterns("/api/**");
+                .addPathPatterns("/api/**").excludePathPatterns(
+                        "/api/option/**"
+                );
 
         registry.addInterceptor(createEnjoyInterceptor()).addPathPatterns("/**")
                 .excludePathPatterns(

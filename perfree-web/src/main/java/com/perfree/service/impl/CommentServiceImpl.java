@@ -33,7 +33,7 @@ public class CommentServiceImpl implements CommentService {
      */
     public Pager<Comment> list(Pager<Comment> pager, String userId) {
         PageHelper.startPage(pager.getPageIndex(), pager.getPageSize());
-        List<Comment> comments = commentMapper.getList(pager.getForm().getContent(), userId);
+        List<Comment> comments = commentMapper.getList(pager.getForm().getContent(), pager.getForm().getArticleType(), userId);
         PageInfo<Comment> pageInfo = new PageInfo<>(comments);
         pager.setTotal(pageInfo.getTotal());
         pager.setData(pageInfo.getList());
@@ -70,11 +70,11 @@ public class CommentServiceImpl implements CommentService {
     }
 
     /**
-     * 获取最新的22条评论(后台首页)
+     * 获取最新的评论(后台首页)
      * @return List<Comment>
      */
-    public List<Comment> getCommentListByDashboard() {
-        return commentMapper.getCommentListByDashboard();
+    public List<Comment> getCommentListByDashboard(int count) {
+        return commentMapper.getCommentListByDashboard(count);
     }
 
     public DirectivePage<HashMap<String, String>> getCommentByArticleId(DirectivePage<HashMap<String, String>> commentPage) {

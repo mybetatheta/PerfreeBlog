@@ -4,9 +4,11 @@
     <insert id="add" useGeneratedKeys="true" keyProperty="id">
           insert into p_article
           ( title, content, summary,categoryId,metaKeywords,metaDescription,
-          thumbnail,isTop,status,userId,isComment,createTime,`type`,viewCount,commentCount,contentModel, flag,template,updateTime) VALUES
+          thumbnail,isTop,status,userId,isComment,createTime,`type`,viewCount,commentCount,contentModel, flag,
+            greatCount,template,updateTime) VALUES
           (#{title},#{content}, #{summary},#{categoryId},#{metaKeywords},#{metaDescription},
-          #{thumbnail},#{isTop},#{status},#{userId},#{isComment},#{createTime},#{type},#{viewCount},#{commentCount}, #{contentModel}, #{flag},#{template},#{updateTime})
+          #{thumbnail},#{isTop},#{status},#{userId},#{isComment},#{createTime},#{type},#{viewCount},#{commentCount},
+           #{contentModel}, #{flag},#{greatCount},#{template},#{updateTime})
     </insert>
     <insert id="addArticleTag">
          insert into p_article_tag (articleId,tagId)VALUES
@@ -36,21 +38,35 @@
 
     <update id="update">
         update p_article set
-        `title` = #{title},
+        <if test="title != null and title != ''">
+            `title` = #{title},
+        </if>
         `content` = #{content},
         summary = #{summary},
         categoryId = #{categoryId},
         metaKeywords = #{metaKeywords},
         metaDescription = #{metaDescription},
         thumbnail = #{thumbnail},
-        isTop = #{isTop},
-        isComment = #{isComment},
-        status = #{status},
-        updateTime=#{updateTime},
-        slug=#{slug},
-        `type`=#{type},
+        <if test="isTop != null and isTop != ''">
+            `isTop` = #{isTop},
+        </if>
+        <if test="isComment != null and isComment != ''">
+            `isComment` = #{isComment},
+        </if>
+        <if test="status != null and status != ''">
+            `status` = #{status},
+        </if>
+        <if test="slug != null and slug != ''">
+            `slug` = #{slug},
+        </if>
+        <if test="type != null and type != ''">
+            `type` = #{type},
+        </if>
+        <if test="contentModel != null and contentModel != ''">
+            `contentModel` = #{contentModel},
+        </if>
         template = #{template},
-        contentModel = #{contentModel}
+        updateTime=#{updateTime}
         where id = #{id}
     </update>
     <update id="articleCommentAdd">
@@ -73,6 +89,12 @@
         update p_article set
             slug = #{slug}
         where id = #{id}
+    </update>
+
+    <update id="updateGreatCount">
+        update p_article set
+            greatCount = greatCount+1
+        where id = #{articleId}
     </update>
 
     <delete id="del">
@@ -106,6 +128,7 @@
         <result property="slug" column="slug"></result>
         <result property="contentModel" column="contentModel"></result>
         <result property="flag" column="flag"></result>
+        <result property="greatCount" column="greatCount"></result>
         <result property="template" column="template"></result>
         <association property="user" javaType="com.perfree.model.User">
             <id property="id" column="userId" />
@@ -139,6 +162,10 @@
         </if>
         <if test="userId != null and userId != ''">
             and t1.userId = #{userId}
+        </if>
+        <if test="content != null and content != ''">
+            <bind name="content" value="'%' + _parameter.content + '%'" />
+            and t1.content like #{content,jdbcType=VARCHAR}
         </if>
         order by t1.isTop desc,t1.createTime desc
     </select>
@@ -182,7 +209,10 @@
         select DISTINCT t1.*,t2.name categoryName,t3.userName,t3.avatar,t3.email,t3.website from p_article t1
         left join p_category t2 on t1.categoryId = t2.id left join p_user t3 on t1.userId = t3.id
         left join p_article_tag t4 on t1.id = t4.articleId
-        where t1.status = 0 and t1.type= 'article'
+        where t1.status = 0
+        <if test="type != null and type != ''">
+            and t1.type = #{type}
+        </if>
         <if test="tagId != null and tagId != ''">
             and t4.tagId = #{tagId}
         </if>
@@ -291,38 +321,27 @@
         select DISTINCT t1.*,t2.name categoryName,t3.userName,t3.avatar,t3.email,t3.website from p_article t1
         left join p_category t2 on t1.categoryId = t2.id left join p_user t3 on t1.userId = t3.id
         left join p_article_tag t4 on t1.id = t4.articleId
-        where t1.status = 0 and t1.type= 'article'
-        <if test="title != null and title != ''">
-            <bind name="title" value="'%' + _parameter.title + '%'" />
-            and t1.title like #{title,jdbcType=VARCHAR}
-        </if>
-        <if test="categoryId != null and categoryId != ''">
-            and t1.categoryId = #{categoryId}
-        </if>
-        order by t1.createTime desc
-        ) t order by t.isTop desc,t.createTime desc
-    </select>
-
-    <select id="getApiHotArticleList" resultMap="LIST_RESULT">
-        select t1.*,t2.name categoryName,t3.userName,t3.avatar,t3.email,t3.website from p_article t1
-        left join p_category t2 on t1.categoryId = t2.id left join p_user t3 on t1.userId = t3.id
-        where t1.status = 0 and t1.type= 'article'
+        where t1.status = 0 and t1.type= #{article.type}
         <if test="article.title != null and article.title != ''">
             <bind name="title" value="'%' + _parameter.article.title + '%'" />
             and t1.title like #{title,jdbcType=VARCHAR}
         </if>
+        <if test="article.content != null and article.content != ''">
+            <bind name="content" value="'%' + _parameter.article.content + '%'" />
+            and (t1.content like #{content,jdbcType=VARCHAR} or t1.title like #{content,jdbcType=VARCHAR})
+        </if>
         <if test="article.categoryId != null and article.categoryId != ''">
             and t1.categoryId = #{article.categoryId}
         </if>
-        order by
-        <if test="type != null and type == 0">
-            t1.commentCount
+        )t
+        <if test="orderBy != null and orderBy != ''">
+            ${orderBy}
         </if>
-        <if test="type != null and type == 1">
-            t1.viewCount
+        <if test="orderBy == null or orderBy == ''">
+            order by isTop,createTime desc
         </if>
-        desc
     </select>
+
     <select id="getBySlug" resultMap="LIST_RESULT">
         select t1.*,t2.name categoryName,t3.userName,t3.avatar,t3.email,t3.website from p_article t1 left join p_category t2 on t1.categoryId = t2.id left join p_user t3 on t1.userId = t3.id
         where t1.slug = #{slug} and t1.type= #{type}
